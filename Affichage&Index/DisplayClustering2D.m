@@ -4,7 +4,7 @@ function [] = DisplayClustering2D (X,V,HP,S,titre)
 %
 % INPUTS
 %   X     : data (objects x attributs)
-%   V     : centroïds (clusters x attributs)
+%   V     : centroÃ¯ds (clusters x attributs)
 %   HP    : Hard Partition (objects x 1)
 %   S     : Mahalanobis matrix (cell clusters (attributs x attributs) ) 
 %   Titre : Title de la figure (str)
@@ -21,11 +21,11 @@ function [] = DisplayClustering2D (X,V,HP,S,titre)
   
   %Projection : X,V -> 2D
   if p>2
-    [axe1,axe2] = PCA_2D(X);
+    [axe1,axe2,pourcentage_info1,pourcentage_info2] = PCA_2D(X);
   else
-      axe1 = [1; 0];
-      axe2 = [0; 1];
-  end
+      axe1 = [1; 0];axe2 = [0; 1];
+      pourcentage_info1 = 100;pourcentage_info2 =100;
+  end 
   XX = axe1'*X';YY = axe2'*X'; 
   Vx= axe1'*V';Vy= axe2'*V';
   
@@ -79,7 +79,7 @@ function [] = DisplayClustering2D (X,V,HP,S,titre)
       Ell_y(i) = axe2'*(Q*inv(sqrt(D))*Cercle(i,:)')+Vj(2);
     end
     
-    %Affichage (test si aucune affectation dans la classe)
+    %Test if the cluster has objects
     if max(size(Yj))~=0
         pX = plot(Xj,Yj,'o','MarkerSize',7); pX.Color = L_color(j,:);
         pV = plot(Vx(j),Vy(j),'o','MarkerSize',10);pV.MarkerFaceColor = L_color(j,:);
@@ -97,6 +97,8 @@ function [] = DisplayClustering2D (X,V,HP,S,titre)
   end
   
   legend(labels,'Location','southwest','Interpreter','latex');
+  xlabel(strcat('-- [',num2str(pourcentage_info1,'%.0f'),'%] -->'));
+  ylabel(strcat('-- [',num2str(pourcentage_info2,'%.0f'),'%] -->'));
   title(titre);
   hold off
 end

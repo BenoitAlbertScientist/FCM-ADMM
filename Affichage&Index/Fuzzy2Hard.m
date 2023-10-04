@@ -23,4 +23,3 @@ function [HP] = Fuzzy2Hard(U)
     end
     
 end
-

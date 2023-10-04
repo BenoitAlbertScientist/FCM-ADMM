@@ -1,34 +1,47 @@
-function [axe1,axe2] = PCA_2D(X)
-%  Principal component analysis n dimensions -> 2D
-%  https://en.wikipedia.org/wiki/Principal_component_analysis
-%   [axe1,axe2] = PCA_2D(X)
+function [axe1,axe2,pourcentage_info1,pourcentage_info2] = PCA_2D(X)
+% Principal component analysis
+%       [axe1,axe2,pourcentage_info1,pourcentage_info2] = PCA_2D(X)
 %
 % INPUTS
-%   X : data (clusters x objects)
+%   X : dataset (objects x  attributs)
 %
 % OUTPUTS
-%   axe1,axe2 : axes in 2D
+%   axe1
+%   axe2 
+%   pourcentage_info1
+%   pourcentage_info1
+%
 %
 %  --------------------------------------------------------------------------
 %  Author : Benoit Albert
 %  mail   : benoit.albert@uca.fr
-%  date   : 03-25-2023
-%  version: 1
+%  date   : 10-21-2021
+%  version: 2
 %  --------------------------------------------------------------------------
 
-
-   n = size(X,1);
-   
-   X_ = X - mean(X).*ones(n,1);
-   
-   [Q,D] = eig(X_'*X_);
-   
-   D = diag(D)';
-   [vals,composante_principales] = maxk(D,2);
-   
-   axe1 = Q(:,composante_principales(1));
-   axe2 = Q(:,composante_principales(2));
-   
-  
+    % Number of objects in the dataset
+    n = size(X, 1); 
+    
+    % Centring the data by subtracting the mean of each dimension
+    X_ = X - mean(X) .* ones(n, 1);
+    
+    % Calculation of eigenvectors (axis1 and axis2) and eigenvalues
+    [Q, D] = eig(X_' * X_);
+    
+    % Extraction of eigenvalues in a vector
+    D = diag(D)';
+    
+    % Selection of the two largest eigenvalues and their indices
+    [vals, composante_principales] = maxk(D, 2);
+    
+    % Extraction of the first two principal components (axis1 and axis2)
+    axe1 = Q(:, composante_principales(1));
+    axe2 = Q(:, composante_principales(2));
+    
+    % Calculation of the percentage of information carried by each principal component
+    somme_totale_vp = sum(D);
+    pourcentage_info1 = (vals(1) / somme_totale_vp) * 100;
+    pourcentage_info2 = (vals(2) / somme_totale_vp) * 100;
+    
 end
 
