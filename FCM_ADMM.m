@@ -26,6 +26,7 @@ function [u,v,S,iter,fobj] = FCM_ADMM(x,c,parameters)
 %   v: centroids (attributs x clusters)
 %   S: cell of cov-matrix (clusters (attributs x attributs ))
 %   iter: numbers of iteration
+%   fobj : objectif function
 %
 %  --------------------------------------------------------------------------
 %  Author : Benoit Albert
@@ -69,6 +70,9 @@ itmax=parameters.itmax;
 iprint=parameters.iprint;
 iprint_inside=parameters.iprint_inside;
 
+if ~isfield(parameters,'HP') parameters.HP=0;end
+HP=parameters.HP;
+
 
 if iprint == 1
     fprintf('*******************************************\n');
@@ -100,7 +104,6 @@ elseif init == 1
     parameters_euc.itmax = 50;
     parameters_euc.iprint = 0;
     [u_eu,v_eu,S_eu,iter_eu] = FCM_ADMM(x,c,parameters_euc);
-    %PCA_AfficheEllipse2D(x',v_eu',u_eu,S_eu,'Init');
     u = u_eu; v = v_eu; S = S_eu;
     if iprint == 1;fprintf('Initialization : Euclidan[iter=%2i  (max. 50)]\n',iter_eu);end;
 elseif init == 2
@@ -176,9 +179,9 @@ while (iter < itmax && err>tol)
         if distance == 1
             for j=1:c
                 j1=(j-1)*n+1; j2=(j-1)*n+n;
-                S{j}=p(:,j1:j2)*p(:,j1:j2)'+eps0*eye(nd);
-                scal=(det(S{j}))^(1/nd); 
-                S{j}=scal*inv(S{j});
+                Sj=p(:,j1:j2)*p(:,j1:j2)'+eps0*eye(nd);
+                scal=(det(Sj))^(1/nd); 
+                S{j}=scal*inv(Sj);
             end   
         end
  
@@ -232,9 +235,25 @@ while (iter < itmax && err>tol)
            end
         end
        fprintf(">>iter=%i | err=%1.6e\n | J_FCM=%15.8e\n",iter,err,fobj);
+       fprintf("ARI  = %10.4f \n",ARI(HP,Fuzzy2Hard(u)));
+
     end
  
 end
+
+%Exit verification : verification the ADMM problem converge to the FCM one.
+max_residu = 10^-10;%maximal value of the residu
+for j=1:c
+   for i=1:n
+       dij=d(:,(j-1)*n+i);pij=p(:,(j-1)*n+i);
+       max_residu = max(max(max_residu,norm(pij-u(i,j)*dij)),norm(dij-x(:,i)+v(:,j)));
+   end
+end
+   
+if (iprint == 1) 
+
+end
+
 
 %Function
 fobj = 0;
@@ -248,8 +267,13 @@ end
 
 if (iprint == 1)   
     fprintf('-------------------------------------------\n');
-    fprintf("Objectif function F(U,V,S) =%e\n",fobj);
-    fprintf("[iter=%i (max. %i)| err=%1.1e]\n",iter,itmax,err);
+    fprintf(" J_FCM=%1.3e\n",fobj);
+    fprintf("[iter=%i (max. %i)| err=%1.6e]\n",iter,itmax,err);    
+    fprintf("Max residual value : %e \n",max_residu);
+    if max_residu>10^-4
+          fprintf("W - A - R - N - I - N - G : RESIDUAL VALUE TOO HIGH \n")
+    end
+    
     fprintf('*******************************************\n');
    
 end

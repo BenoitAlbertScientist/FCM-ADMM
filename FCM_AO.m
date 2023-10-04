@@ -1,6 +1,6 @@
-function [u,v,S,iter,iter_eu] = FCM_AO(x,c,parameters)
+function [u,v,S,iter,fobj] = FCM_AO(x,c,parameters)
 % Fuzzy C-Means with Alternating Optimization
-%    [u,v,S,iter] = FCM_ADMM(x,c,parameters)
+%    [u,v,S,iter,fobj] = FCM_AO(x,c,parameters)
 % 
 % INPUTS
 %   x: input matrix p*n (attributs x objects)
@@ -10,7 +10,7 @@ function [u,v,S,iter,iter_eu] = FCM_AO(x,c,parameters)
 %       parameters.init    : 0=random initialization of the center, 
 %                            1=initialization with
 %                              ADMMeuclidian distance=0,itmax=50,r=2.5.
-%                            2=specific initialization (gives centers)
+%                            2=specific initialization (gives centers g)
 %       parameters.g
 %       parameters.tol     : tolerance (default:10^-3)
 %       parameters.itmax   : maximal number iterations maximal (default:1000)
@@ -23,13 +23,14 @@ function [u,v,S,iter,iter_eu] = FCM_AO(x,c,parameters)
 %   u: fuzzy partition  (clusters x objects)
 %   v: centroids (attributs x clusters)
 %   S: cell of cov-matrix (clusters (attributs x attributs ))
-%   iter: numbers of iteration
+%   iter: number of iterations
+%   fobj : objectif function
 %
 %  --------------------------------------------------------------------------
 %  Author : Benoit Albert
 %  mail   : benoit.albert@uca.fr
-%  date   : 03-25-2023
-%  version: 1
+%  date   : 10-01-2023
+%  version: 2
 %  --------------------------------------------------------------------------
 
 
@@ -95,11 +96,11 @@ elseif init == 1
     parameters_euc.iprint = 0;
     [u_eu,v_eu,S_eu,iter_eu] = FCM_ADMM(x,c,parameters_euc);
     %Remarque : Initialization could be FCM_AO with euclidian
-    %PCA_AfficheEllipse2D(x',v_eu',u_eu,S_eu,'Init');
     u = u_eu; v = v_eu; S = S_eu;
     if iprint == 1;fprintf('Initialization : Euclidan[iter=%2i  (max. 50)]\n',iter_eu);end;
+
 elseif init == 2
-%Specific
+% Specific initialization
     v = parameters.g;
     for i=1:n
         su=0;
@@ -113,15 +114,13 @@ elseif init == 2
         end
     end
     if iprint == 1;fprintf('Initialization : Specific\n');end;
-        
+    
 end
 
-% Inv- Var-Covariance
+% Initialization of Var-Covariance
 eps0 = 10^-8;
 if distance == 0
-    for j=1:c
-        S{j}=eye(nd);
-    end 
+    for j=1:c;S{j}=eye(nd);end 
 else 
     ux=u(:)';  ic=[1:c]'; ic=kron(eye(c),ones(1,n))'*ic;
     d=repmat(x,1,c)-v(:,ic');
@@ -154,17 +153,19 @@ while (iter < itmax && err>tol)
     end
     
     % Compute distance matrix : S
-    for j=1:c
-        Sj=eps0*eye(nd);
-         
-        su=0;
-        for i=1:n
-            Sj=Sj+u(i,j)*u(i,j)*(x(:,i)-v(:,j))*(x(:,i)-v(:,j))';
-        end
-        dS(j)=det(Sj); 
-        scal=dS(j)^(1/nd);
-        S{j}=scal*inv(Sj);
-    end   
+    if distance == 1
+        for j=1:c
+            Sj=eps0*eye(nd);
+
+            su=0;
+            for i=1:n
+                Sj=Sj+u(i,j)*u(i,j)*(x(:,i)-v(:,j))*(x(:,i)-v(:,j))';
+            end
+            dS(j)=det(Sj); 
+            scal=dS(j)^(1/nd);
+            S{j}=scal*inv(Sj);
+        end 
+    end
 
     % Compute partition :  U
     for i=1:n
@@ -178,7 +179,6 @@ while (iter < itmax && err>tol)
             u(i,j)=max(0,1/dd/su);
         end
     end
-    
     
     
     % Compute errors (stopping criterion)
@@ -231,4 +231,3 @@ if (iprint == 1)
 end
 
 end
-
