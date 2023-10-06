@@ -1,7 +1,7 @@
 %% Download data 
 addpath 'Affichage&Index'
 addpath 'Data'
-load a1_n
+load iris_n
 
 n=size(x,2);    %Number of objects
 nd=size(x,1);   %Number of attributs
